@@ -13,7 +13,7 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "birds=birds.__main__:main",
+            "birds=birds.__main__:cli",
         ],
     }
 )
