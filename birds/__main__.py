@@ -7,10 +7,10 @@ from birds.migrator import MigrationDirection, Migrator
 
 
 @click.group()
-def main():
+def cli():
     pass
 
-@click.command()
+@cli.command()
 @click.argument("name")
 @click.option("--dir", default="migrations", help="migrations location")
 def new(name: str, dir: str):
@@ -24,7 +24,7 @@ def new(name: str, dir: str):
     open(filename_template.format(dir=dir, timestamp=int(now.timestamp()), name=name, type="down"), "w")
 
 
-@click.command()
+@cli.command()
 @click.option("--db_url", help="pg database url; postgres://..")
 @click.option("--dir", default="migrations", help="migrations location")
 @click.option("--count", default=-1, help="migrations count to upgrade")
@@ -34,7 +34,7 @@ def up(db_url: str, dir: str, count: int):
     loop.run_until_complete(migrator.apply_migrations(direction=MigrationDirection.UP, count=count))
 
 
-@click.command()
+@cli.command()
 @click.option("--db_url", help="pg database url; postgres://..")
 @click.option("--dir", default="migrations", help="migrations location")
 @click.option("--count", default=-1, help="migrations count to downgrade")
@@ -45,7 +45,4 @@ def down(db_url: str, dir: str, count: int):
 
 
 if __name__ == "__main__":
-    cli = click.CommandCollection(sources=[
-        new, up, down
-    ])
     cli()
