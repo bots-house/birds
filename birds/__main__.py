@@ -7,7 +7,7 @@ from birds.migrator import MigrationDirection, Migrator
 
 
 @click.group()
-def cli():
+def main():
     pass
 
 @click.command()
@@ -45,7 +45,7 @@ def down(db_url: str, dir: str, count: int):
 
 
 if __name__ == "__main__":
-    cli.add_command(new)
-    cli.add_command(up)
-    cli.add_command(down)
+    cli = click.CommandCollection(sources=[
+        new, up, down
+    ])
     cli()
