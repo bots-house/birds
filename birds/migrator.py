@@ -122,7 +122,7 @@ class Migrator:
         row = await connection.fetchrow(f"select * from {self.table} where version = $1", migration_id)
         return True if row else False
 
-    async def apply_migrations(self, direction: Optional[MigrationDirection] = MigrationDirection.DOWN, count: Optional[int] = -1):
+    async def apply_migrations(self, direction: Optional[MigrationDirection] = MigrationDirection.UP, count: Optional[int] = -1):
         if not self.db_url and not self.db_pool:
             raise DatabaseNotProvidedError
         
