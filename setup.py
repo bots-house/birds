@@ -11,6 +11,12 @@ setuptools.setup(
         "asyncpg==0.23.0",
         "click==8.0.1",
     ],
+    extras_require={
+        'dev': [
+            'black',
+            'isort',
+        ]
+    },
     entry_points={
         "console_scripts": [
             "birds=birds.__main__:cli",

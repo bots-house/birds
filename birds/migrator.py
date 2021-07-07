@@ -1,18 +1,25 @@
-from typing import Optional
-from asyncpg import Pool, Connection
-import asyncpg
-from enum import Enum
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import os
+from enum import Enum
+from typing import Optional
 
+import asyncpg
+from asyncpg import Connection, Pool
 
 
 class DatabaseNotProvidedError(Exception):
     def __str__(self) -> str:
         return "Database not provided"
 
+
+class MigrationsDirectoryDoesNotExistsError(Exception):
+    def __str__(self) -> str:
+        return "Migrations directory does not exists"
+
+
 DEFAULT_TABLE = "schema_migrations"
+
 
 class MigrationDirection(str, Enum):
     UP = "up"
@@ -20,15 +27,16 @@ class MigrationDirection(str, Enum):
 
 
 class TransactionMode(str, Enum):
-    '''
+    """
     Individual - In this mode, each migration is run in it's own isolated transaction.
-	If a migration fails, only that migration will be rolled back.
+        If a migration fails, only that migration will be rolled back.
 
     Signle - In this mode, all migrations are run inside a single transaction. If
-	one migration fails, all migrations are rolled back.
-    '''
+        one migration fails, all migrations are rolled back.
+    """
+
     INDIVIDUAL = "individual"
-    SINGLE = "single" 
+    SINGLE = "single"
 
 
 @dataclass
@@ -53,7 +61,6 @@ class Migrator:
         self.table = table
         self.transaction_mode = transaction_mode
 
-
     @staticmethod
     def load_migrations(dir: str) -> list[Migration]:
         filenames = [f for f in os.listdir(dir) if os.path.isfile(f"{dir}/{f}")]
@@ -72,7 +79,7 @@ class Migrator:
 
             with open(up_path, "r") as f:
                 up = f.read()
-            
+
             with open(down_path, "r") as f:
                 down = f.read()
 
@@ -96,36 +103,54 @@ class Migrator:
     async def exec(self, direction: MigrationDirection, migrations: list[Migration]):
 
         async with self.db_pool.acquire() as connection:
-            await connection.execute(f"create table if not exists {self.table} (version bigint primary key not null, applied_at timestamptz not null)")
+            await connection.execute(
+                f"create table if not exists {self.table} (version bigint primary key not null, applied_at timestamptz not null)"
+            )
 
             if self.transaction_mode == TransactionMode.SINGLE:
 
                 async with connection.transaction():
                     for migration in migrations:
                         if direction == MigrationDirection.UP:
-                            if (await self.is_applied(connection, migration.id)):
+                            if await self.is_applied(connection, migration.id):
                                 continue
 
                             await connection.execute(migration.up)
-                            await connection.execute(f"insert into {self.table} (version, applied_at) values($1, $2)", migration.id, datetime.now(timezone.utc))
+                            await connection.execute(
+                                f"insert into {self.table} (version, applied_at) values($1, $2)",
+                                migration.id,
+                                datetime.now(timezone.utc),
+                            )
                         else:
                             if not (await self.is_applied(connection, migration.id)):
                                 continue
-                            
+
                             await connection.execute(migration.down)
-                            await connection.execute(f"delete from {self.table} where version = $1", migration.id)
+                            await connection.execute(
+                                f"delete from {self.table} where version = $1",
+                                migration.id,
+                            )
 
             else:
                 pass
-    
+
     async def is_applied(self, connection: Connection, migration_id: int) -> bool:
-        row = await connection.fetchrow(f"select * from {self.table} where version = $1", migration_id)
+        row = await connection.fetchrow(
+            f"select * from {self.table} where version = $1", migration_id
+        )
         return True if row else False
 
-    async def apply_migrations(self, direction: Optional[MigrationDirection] = MigrationDirection.UP, count: Optional[int] = -1):
+    async def apply_migrations(
+        self,
+        direction: Optional[MigrationDirection] = MigrationDirection.UP,
+        count: Optional[int] = None,
+    ):
         if not self.db_url and not self.db_pool:
             raise DatabaseNotProvidedError
-        
+
+        if not os.path.isdir(self.dir):
+            raise MigrationsDirectoryDoesNotExistsError
+
         if self.db_url and not self.db_pool:
             self.db_pool = await self.__create_db_pool()
 
@@ -136,7 +161,7 @@ class Migrator:
         if direction == MigrationDirection.DOWN:
             migrations.reverse()
 
-        if count != -1:
+        if count:
             migrations = migrations[:count]
-        
+
         await self.exec(direction, migrations=migrations)
