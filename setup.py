@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name='mypythonlib',
+    name='birds',
     packages=setuptools.find_packages(include=["birds"]),
     version='0.1.0',
-    description='My first Python library',
-    author='Me',
+    description='Simple python migrator',
+    author='redhat3',
     license='MIT',
     install_require=[
         "asyncpg==0.23.0",
