@@ -60,10 +60,13 @@ def up(db_url: str, dir: str, count: Optional[int] = None):
 )
 @click.option("--count", default=None, help="migrations count to downgrade")
 def down(db_url: str, dir: str, count: Optional[int] = None):
+    if count:
+        count = int(count)
+    
     migrator = Migrator(dir=dir, db_url=db_url)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
-        migrator.apply_migrations(direction=MigrationDirection.DOWN, count=int(count))
+        migrator.apply_migrations(direction=MigrationDirection.DOWN, count=count)
     )
 
 
