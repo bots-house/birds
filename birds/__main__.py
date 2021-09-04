@@ -40,7 +40,7 @@ def new(name: str, dir: str):
 
 
 @cli.command()
-@click.option("--db_url", help="pg database url; postgres://..")
+@click.option("--db-url", help="pg database url; postgres://..")
 @click.option(
     "--dir", default="migrations", help="migrations location; default=./migrations"
 )
@@ -54,7 +54,7 @@ def up(db_url: str, dir: str, count: Optional[int] = None):
 
 
 @cli.command()
-@click.option("--db_url", help="pg database url; postgres://..")
+@click.option("--db-url", help="pg database url; postgres://..")
 @click.option(
     "--dir", default="migrations", help="migrations location; default=./migrations"
 )
